@@ -1,0 +1,9 @@
+﻿  glad.c
+  EngineCore.cpp
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(47,1): warning C4267:  'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(49,1): warning C4267:  '=': conversion from 'size_t' to 'int', possible loss of data
+  Generating code
+  Previous IPDB not found, fall back to full compilation.
+  All 419 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Finished generating code
+  TriagonEngine.vcxproj -> C:\Users\somet\Desktop\Triagon Engine Container\Engine\x64\Release\TriagonEngine.exe

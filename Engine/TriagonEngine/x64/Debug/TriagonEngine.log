@@ -1,0 +1,32 @@
+﻿  EngineCore.cpp
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(130,10): warning C4477:  'printf' : format string '%s' requires an argument of type 'char *', but variadic argument 1 has type 'int'
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(130,10): warning C4313:  'printf': '%s' in format string conflicts with argument 1 of type 'int'
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(56,26): warning C4244:  'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(107,63): warning C4244:  '=': conversion from 'double' to 'T', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(107,63): warning C4244:         with
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(107,63): warning C4244:         [
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(107,63): warning C4244:             T=float
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(107,63): warning C4244:         ]
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(108,32): warning C4244:  '=': conversion from 'double' to 'T', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(108,32): warning C4244:         with
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(108,32): warning C4244:         [
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(108,32): warning C4244:             T=float
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(108,32): warning C4244:         ]
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(110,63): warning C4244:  '=': conversion from 'double' to 'T', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(110,63): warning C4244:         with
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(110,63): warning C4244:         [
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(110,63): warning C4244:             T=float
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\EngineCore.cpp(110,63): warning C4244:         ]
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(203,1): warning C4267:  'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(72): message :  see reference to function template instantiation 'int Object::ExtractCoods<double>(std::string,VariableType *&,const char *,int,int,bool)' being compiled
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(72): message :         with
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(72): message :         [
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(72): message :             VariableType=double
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(72): message :         ]
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(203,1): warning C4267:  '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(227,75): warning C4244:  '=': conversion from 'double' to 'VariableType', possible loss of data
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(227,75): warning C4244:         with
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(227,75): warning C4244:         [
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(227,75): warning C4244:             VariableType=unsigned int
+C:\Users\somet\Desktop\Triagon Engine Container\Engine\TriagonEngine\ObjectMaker.h(227,75): warning C4244:         ]
+  TriagonEngine.vcxproj -> C:\Users\somet\Desktop\Triagon Engine Container\Engine\x64\Debug\TriagonEngine.exe
