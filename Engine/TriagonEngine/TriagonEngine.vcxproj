@@ -145,6 +145,7 @@
     <ClInclude Include="ObjectMaker.h" />
     <ClInclude Include="ShaderMaker.h" />
     <ClInclude Include="TextureLoader.h" />
+    <ClInclude Include="Utility.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Shaders\README.txt" />

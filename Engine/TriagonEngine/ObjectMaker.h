@@ -2,6 +2,7 @@
 #include "dependencies.h"
 
 #include "ShaderMaker.h"
+#include "Utility.h"
 
 struct Object {
 
@@ -13,24 +14,177 @@ private:
 	unsigned int* indicesArrayPointer;
 	int numberOf_Indices = 0;
 
-public:
-	struct Transform { //TODO
-		double X = 0.0;
-		double Y = 0.0;
-		double Z = 0.0;
-	};
-
+	///Instance object info ///
 	bool InstanceObject = false;
+	GLuint InstanceShaderBufferStorageObject;
+	int InstanceObjecrCount;
+	///^^Instance object info///
 
-	bool CleanObject = true; //Any Errors Occur During Object Creation Will Be Reflected Here, Hopefully, its not fully implemented
+	///Shader uniform locations///
+	unsigned int Shader_TransformMatrixUniformLoc;
+	unsigned int Shader_CameraPositionMatrixUniformLoc;
+	///^^Shader uniform locations///
 
 	unsigned int CreateObjectID; //The Main Purpose of ObjectMaker is to "assemble" this OpenGl ID
 
-	const char* DebugObjectName = "No Name";
+public:
 
-	Object(const char* OBJFilePath, const char* ObjectDebugName, bool InstancePrep) {
+	Shader ObjectShader = *((Shader*)malloc(sizeof(Shader))); //For some reason i have to malloc memore in advace, it can't just accept that it's a type now a constructor
 
-		InstanceObject = InstancePrep;
+	bool CleanObject = true; //Any Errors Occur During Object Creation Will Be Reflected Here, Hopefully, its not fully implemented
+
+	const char* DebugObjectName = "undefined";
+
+	Object(const char* OBJFilePath, const char* ObjectDebugName, Shader RegularShader) { //Create an Regular Object Overload
+
+		ObjectShader = RegularShader;
+		Shader_TransformMatrixUniformLoc = glGetUniformLocation(ObjectShader.ShaderProgrammID, "Transform"); //This uniform should exist in every shader
+		Shader_CameraPositionMatrixUniformLoc = glGetUniformLocation(ObjectShader.ShaderProgrammID, "Camera"); //This uniform should exist in every shader
+
+		unsigned int FUCK = 123543234;
+
+		DebugObjectName = ObjectDebugName; //Assign Debug name, for beauty 
+
+		InstanceObject = false;  //Define object type
+
+		OpenOBJFile(OBJFilePath); //Load and organize object vertex/texture/normal data
+		CreateOpenGlObjects(false); //Create all the nessesary OpenGl IDs
+
+		PurityChecker(); //Check is anything is broken 
+	}
+
+	Object(const char* OBJFilePath, const char* ObjectDebugName, double* InstancePositions, int InstanceCount, Shader InstanceShader) { //Create an Instance Object Overload
+
+		ObjectShader = InstanceShader;
+		Shader_TransformMatrixUniformLoc = glGetUniformLocation(ObjectShader.ShaderProgrammID, "Transform"); //This uniform should exist in every shader
+		Shader_CameraPositionMatrixUniformLoc = glGetUniformLocation(ObjectShader.ShaderProgrammID, "Camera"); //This uniform should exist in every shader
+
+		DebugObjectName = ObjectDebugName;
+
+		InstanceObject = true;
+		InstanceObjecrCount = InstanceCount;
+
+		InstanceShaderBufferStorageObject = CreatePositionsShaderBufferObject(InstanceCount, InstancePositions); //Create position shader buffer obect
+
+		OpenOBJFile(OBJFilePath);
+		CreateOpenGlObjects(true);
+
+		PurityChecker();
+	}
+
+
+public:
+
+	void Draw(glm::vec3 Position, glm::mat4 CameraMatrix) { //Draw the specified objects
+
+		if (InstanceObject) {
+			return;
+		}
+
+		if (CleanObject == false) {
+			return;
+		}
+		
+		ObjectShader.Use();
+		///Assign shader uniforms///
+		glm::mat4 TransformMatrix = Translate(Position); //Just for readability we define TransformMatrix here
+		glUniformMatrix4fv(Shader_TransformMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(TransformMatrix)); //Set transform uniform
+		glUniformMatrix4fv(Shader_CameraPositionMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(CameraMatrix)); //Set camera uniform
+		///^^Assign shader uniforms///
+
+		///Draw Call///
+		glBindVertexArray(CreateObjectID); //Binds the all the related data from a VBO and an EBO to the corresponding GPU buffers
+		glDrawElements(GL_TRIANGLES, numberOf_Indices, GL_UNSIGNED_INT, 0); //Renders what is currently in the GPU buffer
+		///^Draw Call///
+
+		///Free Used Buffers///
+		glBindVertexArray(0);
+
+		glUseProgram(0); //unbind shader
+		///^^Free Used Buffers///
+		
+	}
+	void DrawStaticInstanced(glm::vec3 PositionOffset, glm::mat4 CameraMatrix) { //Special draw for instance objects
+
+		if (InstanceObject == false) {
+			return;
+		}
+
+		if (CleanObject == false) {
+			return;
+		}
+
+		ObjectShader.Use();
+
+		///Assign shader uniforms///
+		glm::mat4 TransformMatrix = Translate(PositionOffset); //Just for readability we define TransformMatrix here
+		glUniformMatrix4fv(Shader_TransformMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(TransformMatrix)); //Set transform uniform
+		glUniformMatrix4fv(Shader_CameraPositionMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(CameraMatrix)); //Set camera uniform
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, InstanceShaderBufferStorageObject); // 1 is the binding, use in shader
+		///^^Assign shader uniforms///
+
+		///Draw Call///
+		glBindVertexArray(CreateObjectID); //Binds the all the related data from a VBO and an EBO to the corresponding GPU buffers
+		glDrawElementsInstanced(GL_TRIANGLES, numberOf_Indices, GL_UNSIGNED_INT, 0, InstanceObjecrCount); //Renders what is currently in the GPU buffer
+		///^Draw Call///
+
+		///Free Used Buffers///
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind from GL_SHADER_STORAGE_BUFFER
+		glBindVertexArray(0); // unbind
+
+		glUseProgram(0); //unbind shader
+		///^^Free Used Buffers///
+
+	}
+	void PrintDebug() { //Prints info about the object such as its debug name, as well as "vertex"(9 per row) and "index"(3 per row) rows
+		printf("Object Name %s", DebugObjectName);
+
+		printf("Object Pure: %s", CleanObject);
+
+		printf("\n_________________________\n");
+
+		for (int i = 0; i < numberOf_Vertices; i++) {
+			if (i % 9 == 0) {
+				printf("\n");
+			}
+			printf("%f ", verticesArrayPointer[i]);
+		}
+		printf("\n_________________________\n");
+
+		for (int i = 0; i < numberOf_Indices; i++) {
+			if (i % 3 == 0) {
+				printf("\n");
+			}
+			printf("%u ", indicesArrayPointer[i]);
+		}
+		printf("\n_________________________\n");
+	}
+
+private:
+
+	void PurityChecker() {
+		if (CreateObjectID == NULL) {
+			CleanObject = false;
+		}
+		if (CleanObject == false) {
+			printf("Object Error: %s Object Is Impure\n", DebugObjectName);
+		}
+	}
+	GLuint CreatePositionsShaderBufferObject(int count,double* InstancePositionsArray) {
+
+		//Create a shader buffer object (new in opengl 4.6) to pass a poition array pointer to the uniform in the shaders
+		GLuint ShaderPositionsStorageBufferObject;
+		glGenBuffers(1, &ShaderPositionsStorageBufferObject);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ShaderPositionsStorageBufferObject);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(double) * count, InstancePositionsArray, GL_STATIC_READ);
+
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ShaderPositionsStorageBufferObject); // 1 is the binding, use in shader
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind ShaderStorageBufferObject from GL_SHADER_STORAGE_BUFFER
+		return ShaderPositionsStorageBufferObject;
+	}
+
+	void OpenOBJFile(const char* OBJFilePath) {
 
 		//"Direct" Coordinates//
 
@@ -44,8 +198,6 @@ public:
 
 		unsigned int* messyArrayPointer; //Temporary Array Housing Many Diffrent Technical Coordinaes From OBJ File
 		int numberOf_messyArrayStuff = 0;
-
-		DebugObjectName = ObjectDebugName;
 
 		std::ifstream ObjFile;
 
@@ -85,79 +237,8 @@ public:
 			vertexNormalsArrayPointer,
 			messyArrayPointer
 		);
-		CreateOpenGlObjects(InstancePrep);
-
-		PurityChecker();
-
-	}
-public:
-
-	void Draw(Shader shader) {
-
-		if (InstanceObject) {
-			return;
-		}
-
-		if (CleanObject == false) {
-			return;
-		}
-		
-		shader.Use();
-		glBindVertexArray(CreateObjectID); //Binds the all the related data from a VBO and an EBO to the corresponding GPU buffers
-		glDrawElements(GL_TRIANGLES, numberOf_Indices, GL_UNSIGNED_INT, 0); //Renders what is currently in the GPU buffer
-		glBindVertexArray(0);
-
-		
-	}
-	void DrawInstanced(Shader shader, int count) {
-
-		if (InstanceObject == false) {
-			return;
-		}
-
-		if (CleanObject == false) {
-			return;
-		}
-		shader.Use();
-		glBindVertexArray(CreateObjectID); //Binds the all the related data from a VBO and an EBO to the corresponding GPU buffers
-		glDrawElementsInstanced(GL_TRIANGLES, numberOf_Indices, GL_UNSIGNED_INT, 0, count); //Renders what is currently in the GPU buffer
-		glBindVertexArray(0);
-
-	}
-	void PrintDebug() { //Prints info about the object such as its debug name, as well as "vertex"(9 per row) and "index"(3 per row) rows
-		printf("Object Name %s", DebugObjectName);
-
-		printf("Object Pure: %s", CleanObject);
-
-		printf("\n_________________________\n");
-
-		for (int i = 0; i < numberOf_Vertices; i++) {
-			if (i % 9 == 0) {
-				printf("\n");
-			}
-			printf("%f ", verticesArrayPointer[i]);
-		}
-		printf("\n_________________________\n");
-
-		for (int i = 0; i < numberOf_Indices; i++) {
-			if (i % 3 == 0) {
-				printf("\n");
-			}
-			printf("%u ", indicesArrayPointer[i]);
-		}
-		printf("\n_________________________\n");
 	}
 
-private:
-
-	void PurityChecker() {
-		if (CreateObjectID == NULL) {
-			CleanObject = false;
-		}
-		if (CleanObject == false) {
-			printf("Object Error: %s Object Is Impure\n", DebugObjectName);
-		}
-	}
 	void CreateOpenGlObjects(bool InstancePrep) {
 
 		if (CleanObject == false) {
@@ -314,24 +395,3 @@ private:
 		}
 	}
 };
-
-
-glm::mat4 Translate(float X, float Y, float Z) {
-	glm::mat4 trans = glm::mat4(1.0f);
-	trans = glm::translate(trans,glm::vec3(X, Y, Z));
-
-	return trans;
-}
-
-glm::mat4 SetRotation(float EulerX, float EulerY, float EulerZ) { //This Is Very Buggy Now
-	glm::mat4 transX = glm::mat4(1.0f); //Create Identity Matrix(s)
-	glm::mat4 transY = glm::mat4(1.0f);
-	glm::mat4 transZ = glm::mat4(1.0f);
-
-	transX = glm::rotate(transX, glm::radians(EulerX), glm::vec3(1.0, 0.0, 0.0));
-	transY = glm::rotate(transY, glm::radians(EulerY), glm::vec3(0.0, 1.0, 0.0));
-	transZ = glm::rotate(transZ, glm::radians(EulerZ), glm::vec3(0.0, 0.0, 1.0));
-
-	return transX * transY * transZ;
-}
-

@@ -85,7 +85,7 @@ public:
 
 		glUseProgram(ShaderProgrammID); //Assign every shader a "perspective" matrix 
 		unsigned int CameraProjectionUniformLoc = glGetUniformLocation(ShaderProgrammID, "Projection");
-		glm::mat4 DesiredProjectionMatrix = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+		glm::mat4 DesiredProjectionMatrix = glm::perspective(glm::radians(70.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.01f, 10000.0f); //FOW,Width,Height,Near Plane, Far Plane
 		glUniformMatrix4fv(CameraProjectionUniformLoc, 1, GL_FALSE, glm::value_ptr(DesiredProjectionMatrix));
 	}
 

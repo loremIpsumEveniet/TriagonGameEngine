@@ -6,7 +6,7 @@ layout (location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aTexCoords;
 layout(location = 2) in vec2 NormalCoods;
 
-layout(std430, binding = 5) buffer ShaderStorageBufferObject {
+layout(std430, binding = 1) buffer ShaderStorageBufferObject {
     double PositionArray[];
 };
 

@@ -6,11 +6,12 @@
 #include "ShaderMaker.h"
 #include "TextureLoader.h"
 
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 1920;
+const unsigned int SCREEN_HEIGHT = 1080;
 
 double DELTA_TIME = 0.0;
 double LastFrameTime = 0.0;
+double CURRENT_FRAME = 0.0;
 
 struct Camera* MainCamera;
 
@@ -18,7 +19,7 @@ struct Camera* MainCamera;
 struct Camera {
 public:
 	double sensitivity = 0.1;
-	double CameraSpeed = 2.5; 
+	double CameraSpeed = 20.5; 
 
 	glm::vec3 CameraPosition = glm::vec3(0.0, 0.0, 0.0);
 
@@ -164,26 +165,11 @@ int main() {
 	/// Compiling Shaders From Source Files // //For Context Check "ShaderMaker" ///
 
 	Shader SimpleShader = Shader("Shaders/BasicVertexShaderSource.glsl", "Shaders/BasicFragmentShaderSource.glsl");
-
-	unsigned int SimpleShader_TransformMatrixUniformLoc = glGetUniformLocation(SimpleShader.ShaderProgrammID, "Transform");
-	unsigned int SimpleShader_CameraPositionMatrixUniformLoc = glGetUniformLocation(SimpleShader.ShaderProgrammID, "Camera");
-
-	SimpleShader.Use(); //IMPORTANT: you can find the uniform location before using the shader but you can't update/set it to anything before using the shader
-
-	glm::mat4 TransformMatrix = glm::mat4(1.0f);
-	glm::mat4 CameraMatrix = glm::mat4(1.0f);
-
-
 	Shader InstanceShader = Shader("Shaders/InstanceVertexShaderSource.glsl", "Shaders/InstanceFragmentShaderSource.glsl");
 
-	unsigned int InstanceShader_TransformMatrixUniformLoc = glGetUniformLocation(InstanceShader.ShaderProgrammID, "Transform");
-	unsigned int InstanceShader_CameraPositionMatrixUniformLoc = glGetUniformLocation(InstanceShader.ShaderProgrammID, "Camera");
+	///^^Compiling Shaders From Source Files ^^///
 
-	unsigned int InstanceShader_InstancePositionsArrayUniformLoc = glGetUniformLocation(InstanceShader.ShaderProgrammID, "PositionArray");
-
-	InstanceShader.Use();
-
-	int numberOf_InstancedPositions = 10000;
+	int numberOf_InstancedPositions = 160000;
 	int counter = 0;
 
 	double* InstancedPositions = (double*)malloc(sizeof(double) * 3 * numberOf_InstancedPositions);
@@ -196,31 +182,26 @@ int main() {
 		}
 	}
 
-	GLuint ShaderStorageBufferObject;
-	glGenBuffers(1, &ShaderStorageBufferObject);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ShaderStorageBufferObject);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, 3 * sizeof(double) * numberOf_InstancedPositions, InstancedPositions, GL_STATIC_READ); //sizeof(data) only works for statically sized C/C++ arrays.
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ShaderStorageBufferObject); //5 is the binding, use in shadr
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0); // unbind
-
-	///^^Compiling Shaders From Source Files ^^///
-
-
 	unsigned int texture = LoadTexture("Textures/SergeyEdited.jpg", false);
 	unsigned int texture2 = LoadTexture("Textures/Discord_Sucks.png", true);
 
 	glActiveTexture(GL_TEXTURE0); //There are 16 guaranteed texture slots in OpenGl, GL_TEXTURE0 throught GL_TEXTURE15
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	//glActiveTexture(GL_TEXTURE1);
+	//glBindTexture(GL_TEXTURE_2D, texture2);
 
 	SimpleShader.setInt("Texture2", 1); //This Setts what GPU texture slot to use, the are all in order from GL_TEXTURE0 ot GL_TEXTURE16, and GL_TEXTURE0 + 8 = GL_TEXTURE8
 
-	Object Bob("Models/TestCubeTiny.obj", "TestCube",false);
+	Object Bob("Models/TestCubeTiny.obj", "TestCube",SimpleShader);
 
-	Object John("Models/TestCubeTiny.obj", "TestCube2", true);
+	Object John("Models/TestCubeTiny.obj", "TestCube2", InstancedPositions, numberOf_InstancedPositions,InstanceShader);
+
+	Object SimplePlane("Models/SimplePlane.obj", "TestCube", SimpleShader);
 
 	glEnable(GL_DEPTH_TEST); //Eneable opengl to depth test before drawing, only needs to be done once, unless we need to disable it (for some reason)
+
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK); //Back Face Culling
 
 	while (!glfwWindowShouldClose(MainWindow)) { //This is the MAIN Render Loop
 
@@ -235,50 +216,34 @@ int main() {
 
 		ProcessKeyboardInput(MainWindow, MainCamera); //get input from keyboard
 
-
 		///^^ Poll for and process events ^^///
 	
 
 		///Time Related Calculations///
 
-		double CurrentFrameTime = glfwGetTime(); //Don't ever use this, only use LastFrameTime Or Delta_Time
-		DELTA_TIME = CurrentFrameTime - LastFrameTime;
-		LastFrameTime = CurrentFrameTime;
+		CURRENT_FRAME = glfwGetTime(); //Don't ever use this, only use LastFrameTime Or Delta_Time
+		DELTA_TIME = CURRENT_FRAME - LastFrameTime;
+		LastFrameTime = CURRENT_FRAME;
 
 		///^^Time Related Calculations^^///
 
 
 		///Camera Matrix Calculation///
 
-		CameraMatrix = glm::lookAt((*MainCamera).CameraPosition, (*MainCamera).CameraPosition + (*MainCamera).CameraForwardVector, (*MainCamera).CameraUpVerctor);
-
-		SimpleShader.Use();
-		glUniformMatrix4fv(SimpleShader_CameraPositionMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(CameraMatrix));
-
-		InstanceShader.Use();
-		glUniformMatrix4fv(InstanceShader_CameraPositionMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(CameraMatrix));
-
+		glm::mat4 CameraMatrix = glm::lookAt((*MainCamera).CameraPosition, (*MainCamera).CameraPosition + (*MainCamera).CameraForwardVector, (*MainCamera).CameraUpVerctor);
+		
 		///^^^Camera Matrix Calculation^^^///
+
 
 		/// Render here ///
 
+		Bob.Draw(glm::vec3(3,2,0),CameraMatrix);
+		SimplePlane.Draw(glm::vec3(0, -1, 0), CameraMatrix);
 
-		SimpleShader.Use();
-		TransformMatrix = Translate(3, 1, 0) * SetRotation(45, 0, 0);
-		glUniformMatrix4fv(SimpleShader_TransformMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(TransformMatrix));
-
-		Bob.Draw(SimpleShader);
-		
-		InstanceShader.Use();
-		TransformMatrix = Translate(0, 0, 0) * SetRotation(0, 0, 0);
-		glUniformMatrix4fv(InstanceShader_TransformMatrixUniformLoc, 1, GL_FALSE, glm::value_ptr(TransformMatrix));
-		John.DrawInstanced(InstanceShader, numberOf_InstancedPositions);
-
-		
+		John.DrawStaticInstanced(glm::vec3(-100, 1, -100), CameraMatrix);
 
 		///^^ Render here ^^ ///
 
-		
 		glfwSwapBuffers(MainWindow); //GLFW/OpenGl Renders to A "Second Screen"/Buffer then swaps the two to remove any rendering artifacts
 		glfwPollEvents();
 	}
